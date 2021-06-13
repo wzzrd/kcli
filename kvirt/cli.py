@@ -2317,6 +2317,7 @@ def create_network(args):
     cidr = args.cidr
     nodhcp = args.nodhcp
     domain = args.domain
+    forwarders = args.forwarders
     config = Kconfig(client=args.client, debug=args.debug, region=args.region, zone=args.zone, namespace=args.namespace)
     k = config.k
     if name is None:
@@ -2329,7 +2330,7 @@ def create_network(args):
     dhcp = not nodhcp
     if args.dual is not None:
         overrides['dual_cidr'] = args.dual
-    result = k.create_network(name=name, cidr=cidr, dhcp=dhcp, nat=nat, domain=domain, overrides=overrides)
+    result = k.create_network(name=name, cidr=cidr, dhcp=dhcp, nat=nat, domain=domain, forwarders=forwarders, overrides=overrides)
     common.handle_response(result, name, element='Network')
 
 
@@ -3452,6 +3453,7 @@ def cli():
     networkcreate_parser.add_argument('-d', '--dual', help='Cidr of dual net', metavar='DUAL')
     networkcreate_parser.add_argument('--nodhcp', action='store_true', help='Disable dhcp on the net')
     networkcreate_parser.add_argument('--domain', help='DNS domain. Defaults to network name')
+    networkcreate_parser.add_argument('--forwarders', help='Dictionary of forwarders to configure on the net')
     networkcreate_parser.add_argument('-P', '--param', action='append',
                                       help='specify parameter or keyword for rendering (can specify multiple)',
                                       metavar='PARAM')

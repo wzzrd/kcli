@@ -32,7 +32,7 @@ import string
 from tempfile import TemporaryDirectory
 import time
 import xml.etree.ElementTree as ET
-
+import ast
 
 LIBVIRT_CMD_NONE = 0
 LIBVIRT_CMD_MODIFY = 1
@@ -2739,7 +2739,19 @@ class Kvirt(object):
         pool.refresh()
         return {'result': 'success'}
 
-    def create_network(self, name, cidr=None, dhcp=True, nat=True, domain=None, plan='kvirt', overrides={}):
+    def create_network(self, name, cidr=None, dhcp=True, nat=True, domain=None, plan='kvirt', forwarders=None, overrides={}):
+        """
+
+        :param name:
+        :param cidr:
+        :param dhcp:
+        :param nat:
+        :param domain:
+        :param plan:
+        :param forwarders:
+        :param overrides:
+        :return:
+        """
         conn = self.conn
         networks = self.list_networks()
         if name in networks:
@@ -2793,11 +2805,25 @@ class Kvirt(object):
             domainxml = "<domain name='%s'/>" % domain
         else:
             domainxml = "<domain name='%s'/>" % name
+        if forwarders is not None:
+            forwarders = ast.literal_eval(forwarders)
+            forwarderxml = ["<dns>"]
+            for forwarder in forwarders:
+                forwarderxml.append(
+                    "<forwarder " +
+                    ("addr=" + "\"" + forwarder['addr'] + "\" " if 'addr' in forwarder else '' ) +
+                    ("domain=" + "\"" + forwarder['domain'] + "\" " if 'domain' in forwarder else '' ) +
+                    "/>")
+            forwarderxml.append("</dns>")
+            forwardersxml = "/n".join(forwarderxml)
+            if len(forwarders) > 0:
+                domainxml = domainxml + "\n" + forwardersxml
         if len(name) < 16:
             bridgexml = "<bridge name='%s' stp='on' delay='0'/>" % name
         else:
             return {'result': 'failure', 'reason': "network %s is more than 16 characters" % name}
         prefix = cidr.split('/')[1]
+
         metadata = """<metadata>
         <kvirt:info xmlns:kvirt="kvirt">
         <kvirt:plan>%s</kvirt:plan>
